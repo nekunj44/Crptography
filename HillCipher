@@ -1,0 +1,59 @@
+import numpy as np
+
+# Function to convert text into numerical matrix
+def text_to_matrix(text, size):
+    text = text.upper().replace(" ", "")  # Remove spaces & convert to uppercase
+    text = [ord(char) - ord('A') for char in text]  # Convert letters to numbers (A=0, B=1, ..., Z=25)
+    
+    while len(text) % size != 0:  # Padding with 'X' if needed
+        text.append(ord('X') - ord('A'))
+
+    matrix = np.array(text).reshape(-1, size)  # Reshape into matrix
+    return matrix
+
+# Function to convert matrix back to text
+def matrix_to_text(matrix):
+    text = "".join(chr(int(num) + ord('A')) for num in matrix.flatten())
+    return text
+
+# Function to encrypt using Hill Cipher
+def hill_encrypt(plaintext, key_matrix):
+    size = key_matrix.shape[0]  # Get matrix size (n x n)
+    text_matrix = text_to_matrix(plaintext, size)  # Convert text to matrix
+    
+    ciphertext_matrix = (np.dot(text_matrix, key_matrix) % 26)  # Encryption formula
+    ciphertext = matrix_to_text(ciphertext_matrix)  # Convert matrix back to text
+    return ciphertext
+
+# Function to find modular inverse of a matrix
+def matrix_mod_inverse(matrix, mod=26):
+    det = int(round(np.linalg.det(matrix)))  # Compute determinant
+    det_inv = pow(det, -1, mod)  # Modular inverse of determinant
+    
+    matrix_inv = np.linalg.inv(matrix) * det  # Adjugate matrix
+    matrix_mod_inv = (matrix_inv * det_inv) % mod  # Multiply by modular inverse and mod 26
+    
+    return np.round(matrix_mod_inv).astype(int)  # Convert to integer matrix
+
+# Function to decrypt using Hill Cipher
+def hill_decrypt(ciphertext, key_matrix):
+    size = key_matrix.shape[0]
+    ciphertext_matrix = text_to_matrix(ciphertext, size)  # Convert text to matrix
+    
+    key_inv = matrix_mod_inverse(key_matrix)  # Find inverse of key matrix
+    
+    plaintext_matrix = (np.dot(ciphertext_matrix, key_inv) % 26)  # Decryption formula
+    plaintext = matrix_to_text(plaintext_matrix)  # Convert matrix back to text
+    return plaintext
+
+# Example usage
+key_matrix = np.array([[6, 24, 1], [13, 16, 10], [20, 17, 15]])  # 3x3 Key matrix
+plaintext = "HELLO"
+
+# Encrypt
+ciphertext = hill_encrypt(plaintext, key_matrix)
+print("Encrypted:", ciphertext)
+
+# Decrypt
+decrypted_text = hill_decrypt(ciphertext, key_matrix)
+print("Decrypted:", decrypted_text)
